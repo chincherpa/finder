@@ -1,23 +1,15 @@
 # -*- coding: utf-8 -*-
-
-#program created by mohit
-#offical website L4wisdom.com
 import os
 import re
 import sys
 from threading import Thread
-from datetime import datetime
-import subprocess
-
+# import subprocess
 import json
-
 import crayons
 
 data_dic = {}
 this_path = os.path.dirname(os.path.realpath(__file__))
 data_file = os.path.join(this_path, 'finder_data.json')
-
-print(data_file)
 
 def get_drives():
     response = os.popen('wmic logicaldisk get caption')
@@ -39,7 +31,8 @@ def index(drive: str):
         for file in files:
             file = file.lower()
             if file in data_dic:
-                data_dic[file] = os.path.join(root, file + '_1')
+                file2 = ''.join([file, '_1'])
+                data_dic[file2] = os.path.join(root, file)
             else :
                 data_dic[file] = os.path.join(root, file)
     return data_dic
@@ -55,12 +48,13 @@ def create():
         print(f'{crayons.yellow("[INFO] Will be created...", bold=True)}')
         file_dict = {}
     print('creating...')
-    t1 = datetime.now()
     if drives:
-        drives_list = drives.replace(' ', '').split(',')
+        drives_input = drives.replace(' ', '').split(',')
+        drives_list = [d + ':' for d in drives_input]
     else:
         drives_list = get_drives()
 
+    print(drives_list)
     list2 = []
     for drive in drives_list:
         if drive =='C:':
@@ -76,10 +70,6 @@ def create():
 
     with open(data_file, 'w') as fp:
         json.dump(data_dic, fp, sort_keys=True, indent=4)
-    t2= datetime.now()
-
-    total =t2-t1
-    print(f'Time taken to create {total}')
 
 
 def del_db():
