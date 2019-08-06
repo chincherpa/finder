@@ -7,6 +7,8 @@ from threading import Thread
 import json
 import crayons
 
+
+
 data_dic = {}
 this_path = os.path.dirname(os.path.realpath(__file__))
 data_file = os.path.join(this_path, 'finder_data.json')
