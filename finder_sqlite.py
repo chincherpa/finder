@@ -23,8 +23,8 @@ def create_connection(db_file):
     try:
         conn = sqlite3.connect(db_file)
         return conn
-    except: # Error as e:
-        print(e)
+    except:  # Error as e:
+        print("Error")
 
 
 if not os.path.isfile(path_to_db):
@@ -35,13 +35,14 @@ conn = create_connection(path_to_db)
 c = conn.cursor()
 
 try:
-    c.execute('''CREATE TABLE my_files(filename, path)''')
+    c.execute('CREATE TABLE my_files(filename, path)')
 except sqlite3.OperationalError as e:
     print(crayons.yellow('\n[INFO]', bold=True), e)
 
 
 def remove_path(folder: str):
-    c.execute('DELETE FROM my_files WHERE path LIKE ?', ('%{}%'.format(folder),))
+    c.execute('DELETE FROM my_files WHERE path LIKE ?', (f'%{folder}%',))
+
 
 def index(le_dir: str):
     time_start = time.time()
@@ -52,8 +53,8 @@ def index(le_dir: str):
     for root, _, files in os.walk(le_dir, topdown=True):
         # root = root.replace(':', ':/')
         for file in files:
-            entities = (file.lower(), root) #os.path.join(root, file.lower()))
-            c.execute('''INSERT INTO my_files (filename, path) VALUES (?, ?)''',entities)
+            entities = (file.lower(), root)  # os.path.join(root, file.lower()))
+            c.execute('''INSERT INTO my_files (filename, path) VALUES (?, ?)''', entities)
     conn.commit()
     print('\n',
           crayons.yellow('Successfully tried to add'),
@@ -64,20 +65,19 @@ def index(le_dir: str):
     print(crayons.yellow('\nTook:'), crayons.yellow(time.strftime('%H:%M:%S', time.gmtime(dur))))
 
 
-
-def find_item(item: str, file_: bool=True) -> list:
+def find_item(item: str, file_: bool = True) -> list:
     spinner.start()
     global time_start
     time_start = time.time()
     # find file
     if file_:
         print('Looking for entries (files)...\n')
-        c.execute('SELECT * FROM my_files WHERE filename LIKE ?', ('%{}%'.format(item),))
+        c.execute('SELECT * FROM my_files WHERE filename LIKE ?', (f'%{item}%',))
         found_items = c.fetchall()
     # find folder
     else:
         print('Looking for entries (folders)...\n')
-        c.execute('SELECT * FROM my_files WHERE path LIKE ?', ('%{}%'.format(item),))
+        c.execute('SELECT * FROM my_files WHERE path LIKE ?', (f'%{item}%',))
         all_items = c.fetchall()
         found_items = []
         found_paths = []
@@ -85,6 +85,33 @@ def find_item(item: str, file_: bool=True) -> list:
             if p not in found_paths:
                 found_paths.append(p)
                 found_items.append([f, p])
+
+    spinner.stop()
+    return found_items
+
+
+def find_item_in_folder(file_: str, folder: str) -> list:
+    print('\nLooking for files with "', crayons.yellow(file_), '" in name\nin folder ', crayons.green(folder), '\n', sep='')
+    spinner.start()
+    global time_start
+    time_start = time.time()
+    # find file
+    c.execute("SELECT * FROM my_files WHERE filename LIKE ? AND path Like ?", ('%' + file_ + '%', folder + '%',))
+    found_items = c.fetchall()
+
+    spinner.stop()
+    return found_items
+
+
+def show_folder(path: str) -> list:
+    spinner.start()
+    global time_start
+    time_start = time.time()
+    # find file
+    print('Looking for entries (folders)...\n')
+    c.execute('SELECT * FROM my_files WHERE path LIKE ?', (f'%{path}%',))
+
+    found_items = c.fetchall()
 
     spinner.stop()
     return found_items
@@ -107,21 +134,23 @@ def count_entries():
 
 while True:
     print('\n')
-    print(crayons.blue('#'*55, bold=True))
-    print(crayons.blue('#'*20, bold=True), crayons.blue('FIND MY FILES', bold=True), crayons.blue('#'*20, bold=True))
-    print(crayons.blue('#'*55, bold=True), '\n')
-    print(crayons.yellow('-'*33))
+    print(crayons.blue('#' * 55, bold=True))
+    print(crayons.blue('#' * 20, bold=True), crayons.blue('FIND MY FILES', bold=True), crayons.blue('#' * 20, bold=True))
+    print(crayons.blue('#' * 55, bold=True), '\n')
+    print(crayons.yellow('-' * 33))
     print(crayons.yellow('|'), 'FIND [', crayons.magenta('F', bold=True), ']ILE\t\t\t', crayons.yellow('|'), "\t# or 'f part of FILENAME'", sep='')
+    print(crayons.yellow('|'), 'FIND [', crayons.magenta('FF', bold=True), ']ILE in FOLDER\t\t', crayons.yellow('|'), sep='')
     print(crayons.yellow('|'), 'FIND [', crayons.magenta('FO', bold=True), ']LDER\t\t\t', crayons.yellow('|'), "\t# or 'fo part of PATH'", sep='')
-    print(crayons.yellow('-'*33))
+    print(crayons.yellow('|'), '[', crayons.magenta('S', bold=True), ']how folder\t\t\t', crayons.yellow('|'), sep='')
+    print(crayons.yellow('-' * 33))
     print(crayons.yellow('|'), '[', crayons.magenta('A', bold=True), ']dd path to index\t\t', crayons.yellow('|'), "\t# or 'a PATH'", sep='')
     print(crayons.yellow('|'), '[', crayons.magenta('R', bold=True), ']emove path from index\t', crayons.yellow('|'), "\t# or 'r PATH'", sep='')
     print(crayons.yellow('|'), '[', crayons.magenta('SX', bold=True), ']how index\t\t\t', crayons.yellow('|'), sep='')
     print(crayons.yellow('|'), '[', crayons.magenta('NX', bold=True), ']umber of entries\t\t', crayons.yellow('|'), sep='')
-    print(crayons.yellow('|'), '[', crayons.magenta('DX', bold=True), ']elete index\t\t', crayons.yellow ('|'), sep='')
-    print(crayons.yellow('|'), crayons.yellow('-'*31), crayons.yellow('|'), sep='')
+    print(crayons.yellow('|'), '[', crayons.magenta('DX', bold=True), ']elete index\t\t', crayons.yellow('|'), sep='')
+    print(crayons.yellow('|'), crayons.yellow('-' * 31), crayons.yellow('|'), sep='')
     print(crayons.yellow('|'), '\t\t\t[', crayons.magenta('C', bold=True), ']ANCEL', crayons.yellow('|'), sep='')
-    print(crayons.yellow('-'*33))
+    print(crayons.yellow('-' * 33))
 
     task = input('Your choice?\t')
 
@@ -130,6 +159,14 @@ while True:
         folder = task[3:]
         findings = find_item(folder, False)
         show_found(findings)
+    # find file in a specific folder
+    elif task[:2].lower() == 'ff':
+        file_ = input('File to look for...:\t') or 0
+        if file_:
+            folder = input('...in folder:\t') or 0
+            if folder:
+                findings = find_item_in_folder(file_, folder)
+                show_found(findings)
     # shortcut find file
     elif task[:2].lower() == 'f ':
         file_ = task[2:]
@@ -143,6 +180,11 @@ while True:
     elif task[:2].lower() == 'r ':
         dir_to_remove = task[2:]
         remove_path(dir_to_remove)
+    # shortcut show folder
+    elif task[:2].lower() == 's ':
+        dir_to_show = task[2:]
+        findings = show_folder(dir_to_show)
+        show_found(findings)
     elif task.lower() == 'f':
         file_ = input('File to look for:\t') or 0
         if file_:
@@ -168,7 +210,10 @@ while True:
         if dir_to_remove:
             remove_path(dir_to_remove)
     elif task.lower() == 's':
-        print('show()')
+        folder = input('Folder to show:\t') or 0
+        if folder:
+            findings = show_folder(folder)
+            show_found(findings)
     elif task.lower() == 'n':
         count_entries()
     elif task.lower() == 'd':
